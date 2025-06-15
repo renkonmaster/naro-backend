@@ -1,37 +1,28 @@
 package main
 
 import (
-	"database/sql"
-	"errors"
-	"fmt"
-	"log"
-	"net/http"
-	"os"
-	"time"
-
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
-)
-
-type City struct {
-	ID          int    `json:"id,omitempty"  db:"ID"`
-	Name        string `json:"name,omitempty"  db:"Name"`
-	CountryCode string `json:"countryCode,omitempty"  db:"CountryCode"`
-	District    string `json:"district,omitempty"  db:"District"`
-	Population  int    `json:"population,omitempty"  db:"Population"`
-}
-
-var (
-	db *sqlx.DB
+	"github.com/traPtitech/naro-template-backend/handler"
+	"log"
+	"os"
+	"time"
 )
 
 func main() {
-	jst, err := time.LoadLocation("Asia/Tokyo")
+	// .envファイルから環境変数を読み込み
+	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// データーベースの設定
+	jst, err := time.LoadLocation("Asia/Tokyo")
+	if err != nil {
+		log.Fatal(err)
+	}
 	conf := mysql.Config{
 		User:      os.Getenv("DB_USERNAME"),
 		Passwd:    os.Getenv("DB_PASSWORD"),
@@ -43,54 +34,27 @@ func main() {
 		Loc:       jst,
 	}
 
-	_db, err := sqlx.Open("mysql", conf.FormatDSN())
-
+	// データベースに接続
+	db, err := sqlx.Open("mysql", conf.FormatDSN())
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("connected")
-	db = _db
 
+	//usersテーブルが存在しなかったら、usersテーブルを作成する
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS users (Username VARCHAR(255) PRIMARY KEY, HashedPass VARCHAR(255))")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	h := handler.NewHandler(db)
 	e := echo.New()
 
-	e.GET("/cities/:cityName", getCityInfoHandler)
+	e.GET("/cities/:cityName", h.GetCityInfoHandler)
+	e.POST("/cities", h.PostCityHandler)
+	e.POST("/signup", h.SignUpHandler)
 
-	e.POST("/post", postCityHandler)
-
-	e.Start(":8080")
-}
-
-func postCityHandler(c echo.Context) error {
-	cityInfo := &City{}
-
-	err := c.Bind(cityInfo)
-
-	if(err != nil){
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("%+v", err))
-	}
-
-	_, err = db.Exec("INSERT INTO city (Name, CountryCode, District, Population) VALUES (?,?,?,?)", cityInfo.Name, cityInfo.CountryCode, cityInfo.District, cityInfo.Population)
-
-	if(err != nil){
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("%+v", err))
-	}
-
-	return c.JSON(http.StatusOK, cityInfo)
-}
-
-func getCityInfoHandler(c echo.Context) error {
-	cityName := c.Param("cityName")
-	log.Println(cityName)
-
-	var city City
-	err := db.Get(&city, "SELECT * FROM city WHERE Name=?", cityName)
-	if errors.Is(err, sql.ErrNoRows) {
-		return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("No such city Name = %s", cityName))
-	}
+	err = e.Start(":8080")
 	if err != nil {
-		log.Printf("DB Error: %s", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
+		log.Fatal(err)
 	}
-
-	return c.JSON(http.StatusOK, city)
 }
