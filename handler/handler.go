@@ -33,6 +33,14 @@ type City struct {
 	Population  sql.NullInt64  `json:"population,omitempty"  db:"Population"`
 }
 
+type Country struct {
+	Code           string          `json:"code" db:"Code"` // CHAR(3)
+	Name           string          `json:"name" db:"Name"` // CHAR(52)
+	Continent      string          `json:"continent" db:"Continent"` // ENUM (stringで十分)
+	Region         string          `json:"region" db:"Region"`     // CHAR(26)
+	Population     int32           `json:"population" db:"Population"` // INT
+}
+
 type User struct {
 	Username   string `json:"username,omitempty"  db:"Username"`
 	HashedPass string `json:"-"  db:"HashedPass"`
@@ -56,6 +64,35 @@ func (h *Handler) GetCityInfoHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, city)
+}
+
+func (h * Handler) GetCountryInfoHandler(c echo.Context) error {
+	var countries []Country
+	err := h.db.Select(&countries, "SELECT Code, Name, Continent, Region, Population FROM country")
+	if err != nil {
+		log.Printf("failed to get country data: %s\n", err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	return c.JSON(http.StatusOK, countries)
+}
+
+func (h *Handler) GetCitiesByCountryCodeHandler(c echo.Context) error {
+	countryCode := c.QueryParam("countryCode")
+
+	if countryCode == "" {
+		return c.String(http.StatusBadRequest, "countryCode query parameter is required")
+	}
+
+	var cities []City
+	err := h.db.Select(&cities, "SELECT * FROM city WHERE CountryCode =?", countryCode)
+
+	if err != nil {
+		log.Printf("failed to get city data: %s\n", err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	return c.JSON(http.StatusOK, cities)
 }
 
 func (h *Handler) PostCityHandler(c echo.Context) error {
@@ -170,6 +207,18 @@ func (h *Handler) LoginHandler(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
+func (h *Handler) LogoutHandler (c echo.Context) error {
+	sess, _ := session.Get("sessions", c)
+	sess.Options.MaxAge = -1
+	err := sess.Save(c.Request(), c.Response())
+	if err != nil {
+		log.Printf("Failed to clear session: %v", err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	return c.NoContent(http.StatusOK)
+}
+
 func UserAuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		sess, err := session.Get("sessions", c)
@@ -190,3 +239,4 @@ func GetMeHandler(c echo.Context) error {
 		Username: c.Get("username").(string),
 	})
 }
+

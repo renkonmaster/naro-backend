@@ -65,6 +65,7 @@ func main() {
 	
 	e.POST("/signup", h.SignUpHandler)
 	e.POST("/login", h.LoginHandler)
+	e.POST("/logout", h.LogoutHandler)
 	e.GET("/ping", func(c echo.Context) error { return c.String(http.StatusOK, "pong")})
 
 	withAuth := e.Group("") 
@@ -72,6 +73,8 @@ func main() {
 	withAuth.GET("/me", handler.GetMeHandler)
 	withAuth.GET("/cities/:cityName", h.GetCityInfoHandler)
 	withAuth.POST("/cities", h.PostCityHandler)
+	withAuth.GET("/cities", h.GetCitiesByCountryCodeHandler)
+	withAuth.GET("/countries", h.GetCountryInfoHandler)
 
 	err = e.Start(":8080")
 	if err != nil {
