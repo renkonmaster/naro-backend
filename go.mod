@@ -1,4 +1,4 @@
-module github.com/traPtitech/naro-template-backend
+module naro-backend
 
 go 1.23.0
 
