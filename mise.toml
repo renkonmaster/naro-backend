@@ -1,0 +1,18 @@
+[tools]
+go="1.26.4"
+
+[tasks.up]
+description = "Start docker containers"
+run = "docker compose up -d"
+
+[tasks.down]
+description = "Stop docker containers"
+run = "docker compose down"
+
+[tasks.reset]
+description = "Stop docker containers and remove volumes"
+run = "docker compose down -v"
+
+[tasks.db]
+description = "Exec into mysql container"
+run = "docker compose exec mysql bash"
