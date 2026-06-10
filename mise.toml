@@ -2,17 +2,17 @@
 go="1.26.4"
 
 [tasks.up]
-description = "Start docker containers"
+description = "Start docker containers (Docker コンテナを起動)"
 run = "docker compose up -d"
 
 [tasks.down]
-description = "Stop docker containers"
+description = "Stop docker containers (Docker コンテナを停止)"
 run = "docker compose down"
 
 [tasks.reset]
-description = "Stop docker containers and remove volumes"
+description = "Stop docker containers and remove volumes (Docker コンテナを停止してボリュームを削除)"
 run = "docker compose down -v"
 
 [tasks.db]
-description = "Exec into mysql container"
+description = "Exec into mysql container (MySQL コンテナの中に入る)"
 run = "docker compose exec mysql bash"
