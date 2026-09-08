@@ -34,11 +34,11 @@ type City struct {
 }
 
 type Country struct {
-	Code           string          `json:"code" db:"Code"` // CHAR(3)
-	Name           string          `json:"name" db:"Name"` // CHAR(52)
-	Continent      string          `json:"continent" db:"Continent"` // ENUM (stringで十分)
-	Region         string          `json:"region" db:"Region"`     // CHAR(26)
-	Population     int32           `json:"population" db:"Population"` // INT
+	Code       string `json:"code" db:"Code"`             // CHAR(3)
+	Name       string `json:"name" db:"Name"`             // CHAR(52)
+	Continent  string `json:"continent" db:"Continent"`   // ENUM (stringで十分)
+	Region     string `json:"region" db:"Region"`         // CHAR(26)
+	Population int32  `json:"population" db:"Population"` // INT
 }
 
 type User struct {
@@ -66,7 +66,7 @@ func (h *Handler) GetCityInfoHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, city)
 }
 
-func (h * Handler) GetCountryInfoHandler(c echo.Context) error {
+func (h *Handler) GetCountryInfoHandler(c echo.Context) error {
 	var countries []Country
 	err := h.db.Select(&countries, "SELECT Code, Name, Continent, Region, Population FROM country")
 	if err != nil {
@@ -207,7 +207,7 @@ func (h *Handler) LoginHandler(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
-func (h *Handler) LogoutHandler (c echo.Context) error {
+func (h *Handler) LogoutHandler(c echo.Context) error {
 	sess, _ := session.Get("sessions", c)
 	sess.Options.MaxAge = -1
 	err := sess.Save(c.Request(), c.Response())
@@ -236,7 +236,6 @@ func UserAuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 func GetMeHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, Me{
-		Username: c.Get("username").(string),
+		Username: c.Get("userName").(string),
 	})
 }
-
